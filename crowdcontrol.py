@@ -12,7 +12,7 @@ CHANNELS = 1  # MONO
 RATE = 44100
 
 # %%
-p = pyaudio.PyAudio()
+p = pyaudio.PyAudio()  # Creates the PyAudio object
 
 stream = p.open(
     format=FORMAT,
@@ -34,10 +34,7 @@ ax.set_xlim(0, CHUNK)
 while True:
     data = stream.read(CHUNK)
     data_int = np.array(struct.unpack(
-        str(2 * CHUNK) + 'B', data), dtype='b')[::2] + 127
+        str(2 * CHUNK) + 'B', data), dtype='b')[::2] + 128
     line.set_ydata(data_int)
     fig.canvas.draw()
     fig.canvas.flush_events()
-
-ax.plot(data_int, '-')
-plt.show()
