@@ -6,10 +6,10 @@ import matplotlib.pyplot as plt
 
 %matplotlib tk
 
-CHUNK = 1024 * 4
+CHUNK = 2048 * 8
 FORMAT = pyaudio.paInt16
 CHANNELS = 1  # MONO
-BITRATE = 44100
+RATE = 44100
 
 # %%
 p = pyaudio.PyAudio()
@@ -17,7 +17,7 @@ p = pyaudio.PyAudio()
 stream = p.open(
     format=FORMAT,
     channels=CHANNELS,
-    rate=BITRATE,
+    rate=RATE,
     input=True,
     output=True,
     frames_per_buffer=CHUNK
@@ -25,7 +25,7 @@ stream = p.open(
 
 fig, ax = plt.subplots()
 
-x = np.arrange(0, 2 * CHUNK, 2)
+x = np.arange(0, 2 * CHUNK, 2)
 line, = ax.plot(x, np.random.rand(CHUNK))
 ax.set_ylim(0, 255)
 ax.set_xlim(0, CHUNK)
