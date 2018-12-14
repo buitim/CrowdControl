@@ -12,6 +12,10 @@ Haven't gotten too much time to work on this because of classes and life. Expect
 
 **_Fully expect the code to be crap for a while_** 😉
 
+# Screenshots
+
+![sc001](assets/screenshots/sc001.png)
+
 # Third-Party Libraries
 
 -   [Jupyter](https://jupyter.org)

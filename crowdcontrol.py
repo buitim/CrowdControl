@@ -9,6 +9,8 @@ from scipy.fftpack import fft
 import sys
 import time
 
+# CREDIT: Mark Jay #
+
 
 class AudioStream(object):
     def __init__(self):
@@ -21,11 +23,12 @@ class AudioStream(object):
         self.win.setWindowTitle('Spectrum Analyzer')
         self.win.setGeometry(5, 115, 1910, 1070)
 
-        wf_xlabels = [(0, '0'), (2048, '2048'), (4096, '4096')]
+        wf_xlabels = [(0, '0'), (2048, '2048'),
+                      (4096, '4096')]  # (Integer, Label)
         wf_xaxis = pg.AxisItem(orientation='bottom')
-        wf_xaxis.setTicks([wf_xlabels])
+        wf_xaxis.setTicks([wf_xlabels])  # Set labels to ticks
 
-        wf_ylabels = [(0, '0'), (127, '128'), (255, '255')]
+        wf_ylabels = [(0, '0'), (128, '128'), (255, '255')]
         wf_yaxis = pg.AxisItem(orientation='left')
         wf_yaxis.setTicks([wf_ylabels])
 
@@ -49,6 +52,7 @@ class AudioStream(object):
         self.RATE = 44100
         self.CHUNK = 1024 * 2
 
+        # PyAudio stream
         self.p = pyaudio.PyAudio()
         self.stream = self.p.open(
             format=self.FORMAT,
@@ -59,8 +63,8 @@ class AudioStream(object):
             frames_per_buffer=self.CHUNK,
         )
         # waveform and spectrum x points
-        self.x = np.arange(0, 2 * self.CHUNK, 2)
-        self.f = np.linspace(0, self.RATE / 2, self.CHUNK / 2)
+        self.x = np.arange(0, 2 * self.CHUNK, 2)  # Samples
+        self.f = np.linspace(0, self.RATE / 2, self.CHUNK / 2)  # Frequencies
 
     def start(self):
         if (sys.flags.interactive != 1) or not hasattr(QtCore, 'PYQT_VERSION'):
@@ -76,6 +80,7 @@ class AudioStream(object):
                 self.waveform.setXRange(0, 2 * self.CHUNK, padding=0.005)
             if name == 'spectrum':
                 self.traces[name] = self.spectrum.plot(pen='m', width=3)
+                # Logarithmic plot for both axes
                 self.spectrum.setLogMode(x=True, y=True)
                 self.spectrum.setYRange(-4, 0, padding=0)
                 self.spectrum.setXRange(
