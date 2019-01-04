@@ -5,6 +5,7 @@ import pyqtgraph as pg
 import struct
 import pyaudio
 from scipy.fftpack import fft
+from scipy.stats import stats
 
 import sys
 import time
@@ -13,6 +14,7 @@ import time
 
 # Globals #
 averageValue = np.zeros(2048)
+dataSum = np.zeros((350, 2048))
 averageCount = 0
 
 
@@ -23,8 +25,8 @@ class AudioStream(object):
         pg.setConfigOptions(antialias=True)
         self.traces = dict()
         self.app = QtGui.QApplication(sys.argv)
-        self.win = pg.GraphicsWindow(title='Spectrum Analyzer')
-        self.win.setWindowTitle('Spectrum Analyzer')
+        self.win = pg.GraphicsWindow(title='CrowdControl')
+        self.win.setWindowTitle('CrowdControl')
         self.win.setGeometry(5, 115, 1910, 1070)
 
         wf_xlabels = [(0, '0'), (2048, '2048'),
@@ -87,38 +89,48 @@ class AudioStream(object):
                 self.waveform.setXRange(0, 2 * self.CHUNK, padding=0.005)
             if name == 'average':
                 self.traces[name] = self.average.plot(pen='m', width=3)
-                self.average.setYRange(128, 180, padding=0)
+                self.average.setYRange(128, 165, padding=0)
                 self.average.setXRange(0, 2 * self.CHUNK, padding=0.005)
-            # if name == 'spectrum':
-            #     self.traces[name] = self.spectrum.plot(pen='m', width=3)
+            # if name == 'average':
+            #     self.traces[name] = self.average.plot(pen='m', width=3)
             #     # Logarithmic plot for both axes
-            #     self.spectrum.setLogMode(x=True, y=True)
-            #     self.spectrum.setYRange(-4, 0, padding=0)
-            #     self.spectrum.setXRange(
+            #     self.average.setLogMode(x=True, y=True)
+            #     self.average.setYRange(-4, 0, padding=0)
+            #     self.average.setXRange(
             #         np.log10(20), np.log10(self.RATE / 2), padding=0.005)
 
     # Python doesn't like it when I don't have self as the first arg. Maybe because I'm declaring this as a method?
     def approximateRollingAverage(self, wf_data):
-        global averageCount, averageValue
+        global averageCount, averageValue, dataSum
 
-        if averageCount == 500:
-            averageCount = 0
-            averageValue = np.zeros(2048)
-
-        # Sidenote... I hate how python doesnt have the increment shorthand...
-        averageCount += 1
+        # if averageCount == 250:
+        #     averageCount = 0
+        #     averageValue = np.zeros(2048)
 
         # Approximates average
         # Source: https://stackoverflow.com/questions/12636613/how-to-calculate-moving-average-without-keeping-the-count-and-data-total
-        averageValue -= averageValue / averageCount
-        averageValue += wf_data / averageCount
+        # averageValue -= averageValue / averageCount
+        # averageValue += wf_data / averageCount
+        # averageValue = abs(averageValue)
 
-        # if (np.array_equal(wf_data, averageValue)):
-        #     print("== Average is the same")
-        # else:
-        #     print("== Average is different")
+        dataAmplitude = abs(np.median(abs(wf_data)) - 128)
 
-        self.set_plotdata(name='average', data_x=self.x, data_y=averageValue)
+        # Each index will be a continuing sum from the last wf_data
+        dataSum[averageCount % len(dataSum)] = dataAmplitude + \
+            dataSum[(averageCount - 1) % len(dataSum)]
+
+        # Find average by taking current sum and dividing by the current iteration count. Count starts from 0 so we +1 because math
+        averageValue = abs(
+            (dataSum[averageCount % len(dataSum)] / (averageCount + 1)))
+
+        amplitudeMode = '%.3f' % (stats.mode(averageValue)[0])
+
+        if amplitudeMode
+
+        # self.set_plotdata(name='average', data_x=self.x, data_y=averageValue)
+
+        # Sidenote... I hate how python doesnt have the increment shorthand...
+        averageCount += 1
 
     # MARK: Update plot values
 
