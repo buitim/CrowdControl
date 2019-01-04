@@ -11,6 +11,9 @@ import time
 
 # CREDIT: Mark Jay #
 
+# Globals #
+averageValues = [0] * 2048
+
 
 class AudioStream(object):
     def __init__(self):
@@ -70,6 +73,7 @@ class AudioStream(object):
         if (sys.flags.interactive != 1) or not hasattr(QtCore, 'PYQT_VERSION'):
             QtGui.QApplication.instance().exec_()
 
+        # Show the plot
     def set_plotdata(self, name, data_x, data_y):
         if name in self.traces:
             self.traces[name].setData(data_x, data_y)
@@ -86,11 +90,19 @@ class AudioStream(object):
                 self.spectrum.setXRange(
                     np.log10(20), np.log10(self.RATE / 2), padding=0.005)
 
+        # Update plot values
     def update(self):
+        global averageValues
+
         wf_data = self.stream.read(self.CHUNK)
         wf_data = struct.unpack(str(2 * self.CHUNK) + 'B', wf_data)
         wf_data = np.array(wf_data, dtype='b')[::2] + 128
-        self.set_plotdata(name='waveform', data_x=self.x, data_y=wf_data,)
+        self.set_plotdata(name='waveform', data_x=self.x, data_y=wf_data)
+
+        # Generates averages?
+        averageValues += wf_data
+        averageValues = averageValues/2
+        print(averageValues)
 
         sp_data = fft(np.array(wf_data, dtype='int8') - 128)
         sp_data = np.abs(sp_data[0:int(self.CHUNK / 2)]
