@@ -16,6 +16,7 @@ import time
 averageValue = np.zeros(2048)
 dataSum = np.zeros((350, 2048))
 averageCount = 0
+previousAmplitudeMode = 0
 
 
 class AudioStream(object):
@@ -101,17 +102,7 @@ class AudioStream(object):
 
     # Python doesn't like it when I don't have self as the first arg. Maybe because I'm declaring this as a method?
     def approximateRollingAverage(self, wf_data):
-        global averageCount, averageValue, dataSum
-
-        # if averageCount == 250:
-        #     averageCount = 0
-        #     averageValue = np.zeros(2048)
-
-        # Approximates average
-        # Source: https://stackoverflow.com/questions/12636613/how-to-calculate-moving-average-without-keeping-the-count-and-data-total
-        # averageValue -= averageValue / averageCount
-        # averageValue += wf_data / averageCount
-        # averageValue = abs(averageValue)
+        global averageCount, averageValue, dataSum, previousAmplitudeMode
 
         dataAmplitude = abs(np.median(abs(wf_data)) - 128)
 
@@ -123,14 +114,20 @@ class AudioStream(object):
         averageValue = abs(
             (dataSum[averageCount % len(dataSum)] / (averageCount + 1)))
 
-        amplitudeMode = '%.3f' % (stats.mode(averageValue)[0])
+        amplitudeMode = float('%.3f' % (stats.mode(averageValue)[0]))
 
-        if amplitudeMode
-
+        print(amplitudeMode)
+        if (amplitudeMode - previousAmplitudeMode) >= 3:
+            print("== Significant change detected")
         # self.set_plotdata(name='average', data_x=self.x, data_y=averageValue)
 
         # Sidenote... I hate how python doesnt have the increment shorthand...
         averageCount += 1
+        previousAmplitudeMode = amplitudeMode
+
+        # TODO
+        # Keep history of x amount of previous entries of amplitude and get the mode from that
+        # if the current amplitude is [threshold] difference from that current mode, send a notice
 
     # MARK: Update plot values
 
