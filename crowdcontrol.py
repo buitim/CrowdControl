@@ -46,9 +46,11 @@ class AudioStream(object):
         self.waveform = self.win.addPlot(
             title='WAVEFORM', row=1, col=1, axisItems={'bottom': wf_xaxis, 'left': wf_yaxis},
         )
-        self.spectrum = self.win.addPlot(
-            title='SPECTRUM', row=2, col=1, axisItems={'bottom': sp_xaxis},
-        )
+        self.average = self.win.addPlot(
+            title='AVERAGE', row=2, col=1)
+        # self.spectrum = self.win.addPlot(
+        #     title='SPECTRUM', row=2, col=1, axisItems={'bottom': sp_xaxis},
+        # )
 
         # pyaudio stuff
         self.FORMAT = pyaudio.paInt16
@@ -83,17 +85,25 @@ class AudioStream(object):
                 self.traces[name] = self.waveform.plot(pen='c', width=3)
                 self.waveform.setYRange(0, 255, padding=0)
                 self.waveform.setXRange(0, 2 * self.CHUNK, padding=0.005)
-            if name == 'spectrum':
-                self.traces[name] = self.spectrum.plot(pen='m', width=3)
-                # Logarithmic plot for both axes
-                self.spectrum.setLogMode(x=True, y=True)
-                self.spectrum.setYRange(-4, 0, padding=0)
-                self.spectrum.setXRange(
-                    np.log10(20), np.log10(self.RATE / 2), padding=0.005)
+            if name == 'average':
+                self.traces[name] = self.average.plot(pen='m', width=3)
+                self.average.setYRange(128, 180, padding=0)
+                self.average.setXRange(0, 2 * self.CHUNK, padding=0.005)
+            # if name == 'spectrum':
+            #     self.traces[name] = self.spectrum.plot(pen='m', width=3)
+            #     # Logarithmic plot for both axes
+            #     self.spectrum.setLogMode(x=True, y=True)
+            #     self.spectrum.setYRange(-4, 0, padding=0)
+            #     self.spectrum.setXRange(
+            #         np.log10(20), np.log10(self.RATE / 2), padding=0.005)
 
     # Python doesn't like it when I don't have self as the first arg. Maybe because I'm declaring this as a method?
     def approximateRollingAverage(self, wf_data):
         global averageCount, averageValue
+
+        if averageCount == 500:
+            averageCount = 0
+            averageValue = np.zeros(2048)
 
         # Sidenote... I hate how python doesnt have the increment shorthand...
         averageCount += 1
@@ -103,7 +113,12 @@ class AudioStream(object):
         averageValue -= averageValue / averageCount
         averageValue += wf_data / averageCount
 
-        print(averageValue)
+        # if (np.array_equal(wf_data, averageValue)):
+        #     print("== Average is the same")
+        # else:
+        #     print("== Average is different")
+
+        self.set_plotdata(name='average', data_x=self.x, data_y=averageValue)
 
     # MARK: Update plot values
 
@@ -117,10 +132,10 @@ class AudioStream(object):
 
         self.approximateRollingAverage(wf_data=wf_data)
 
-        sp_data = fft(np.array(wf_data, dtype='int8') - 128)
-        sp_data = np.abs(sp_data[0:int(self.CHUNK / 2)]
-                         ) * 2 / (128 * self.CHUNK)
-        self.set_plotdata(name='spectrum', data_x=self.f, data_y=sp_data)
+        # sp_data = fft(np.array(wf_data, dtype='int8') - 128)
+        # sp_data = np.abs(sp_data[0:int(self.CHUNK / 2)]
+        #                  ) * 2 / (128 * self.CHUNK)
+        # self.set_plotdata(name='spectrum', data_x=self.f, data_y=sp_data)
 
     def animation(self):
         timer = QtCore.QTimer()
