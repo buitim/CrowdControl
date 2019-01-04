@@ -12,7 +12,8 @@ import time
 # CREDIT: Mark Jay #
 
 # Globals #
-averageValues = [0] * 2048
+averageValue = np.zeros(2048)
+averageCount = 0
 
 
 class AudioStream(object):
@@ -90,19 +91,31 @@ class AudioStream(object):
                 self.spectrum.setXRange(
                     np.log10(20), np.log10(self.RATE / 2), padding=0.005)
 
-        # Update plot values
+    # Python doesn't like it when I don't have self as the first arg. Maybe because I'm declaring this as a method?
+    def approximateRollingAverage(self, wf_data):
+        global averageCount, averageValue
+
+        # Sidenote... I hate how python doesnt have the increment shorthand...
+        averageCount += 1
+
+        # Approximates average
+        # Source: https://stackoverflow.com/questions/12636613/how-to-calculate-moving-average-without-keeping-the-count-and-data-total
+        averageValue -= averageValue / averageCount
+        averageValue += wf_data / averageCount
+
+        print(averageValue)
+
+    # MARK: Update plot values
+
     def update(self):
-        global averageValues
+        global averageValue
 
         wf_data = self.stream.read(self.CHUNK)
         wf_data = struct.unpack(str(2 * self.CHUNK) + 'B', wf_data)
         wf_data = np.array(wf_data, dtype='b')[::2] + 128
         self.set_plotdata(name='waveform', data_x=self.x, data_y=wf_data)
 
-        # Generates averages?
-        averageValues += wf_data
-        averageValues = averageValues/2
-        print(averageValues)
+        self.approximateRollingAverage(wf_data=wf_data)
 
         sp_data = fft(np.array(wf_data, dtype='int8') - 128)
         sp_data = np.abs(sp_data[0:int(self.CHUNK / 2)]
