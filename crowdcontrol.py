@@ -14,8 +14,8 @@ import time
 
 # Globals #
 averageValue = np.zeros(2048)
-dataSum = np.zeros((350, 2048))
-averageCount = 0
+dataSum = np.zeros((25, 2048))
+iteratorCount = 0
 previousAmplitudeMode = 0
 
 
@@ -102,17 +102,17 @@ class AudioStream(object):
 
     # Python doesn't like it when I don't have self as the first arg. Maybe because I'm declaring this as a method?
     def approximateRollingAverage(self, wf_data):
-        global averageCount, averageValue, dataSum, previousAmplitudeMode
+        global iteratorCount, averageValue, dataSum, previousAmplitudeMode
 
         dataAmplitude = abs(np.median(abs(wf_data)) - 128)
 
         # Each index will be a continuing sum from the last wf_data
-        dataSum[averageCount % len(dataSum)] = dataAmplitude + \
-            dataSum[(averageCount - 1) % len(dataSum)]
+        dataSum[iteratorCount % len(dataSum)] = dataAmplitude + \
+            dataSum[(iteratorCount - 1) % len(dataSum)]
 
         # Find average by taking current sum and dividing by the current iteration count. Count starts from 0 so we +1 because math
         averageValue = abs(
-            (dataSum[averageCount % len(dataSum)] / (averageCount + 1)))
+            (dataSum[iteratorCount % len(dataSum)] / (iteratorCount + 1)))
 
         amplitudeMode = float('%.3f' % (stats.mode(averageValue)[0]))
 
@@ -122,7 +122,7 @@ class AudioStream(object):
         # self.set_plotdata(name='average', data_x=self.x, data_y=averageValue)
 
         # Sidenote... I hate how python doesnt have the increment shorthand...
-        averageCount += 1
+        iteratorCount += 1
         previousAmplitudeMode = amplitudeMode
 
         # TODO
