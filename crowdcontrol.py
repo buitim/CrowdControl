@@ -12,14 +12,15 @@ import time
 
 # CREDIT: Mark Jay #
 
-# Globals #
-averageValue = np.zeros(2048)
-dataSum = np.zeros((25, 2048))
-iteratorCount = 0
-previousAmplitudeMode = 0
-
 
 class AudioStream(object):
+    # Local Variables #
+    averageValue = np.zeros(2048)
+    # dataHistory = np.zeros((50, 2048))
+    dataHistory = np.zeros(50)
+    iteratorCount = 0
+    previousamplitudeAverage = 0
+
     def __init__(self):
 
         # pyqtgraph stuff
@@ -47,10 +48,11 @@ class AudioStream(object):
         sp_xaxis.setTicks([sp_xlabels])
 
         self.waveform = self.win.addPlot(
-            title='WAVEFORM', row=1, col=1, axisItems={'bottom': wf_xaxis, 'left': wf_yaxis},
+            title='WAVEFORM', axisItems={'bottom': wf_xaxis, 'left': wf_yaxis},
+            # title='WAVEFORM', row=1, col=1, axisItems={'bottom': wf_xaxis, 'left': wf_yaxis},
         )
-        self.average = self.win.addPlot(
-            title='AVERAGE', row=2, col=1)
+        # self.average = self.win.addPlot(
+        #     title='AVERAGE', row=2, col=1)
         # self.spectrum = self.win.addPlot(
         #     title='SPECTRUM', row=2, col=1, axisItems={'bottom': sp_xaxis},
         # )
@@ -102,37 +104,28 @@ class AudioStream(object):
 
     # Python doesn't like it when I don't have self as the first arg. Maybe because I'm declaring this as a method?
     def approximateRollingAverage(self, wf_data):
-        global iteratorCount, averageValue, dataSum, previousAmplitudeMode
-
+        # Change this threshold depending on the equipment. Tested using MacBook mic so YMMV
+        amplitudeThreshold = 16
         dataAmplitude = abs(np.median(abs(wf_data)) - 128)
 
         # Each index will be a continuing sum from the last wf_data
-        dataSum[iteratorCount % len(dataSum)] = dataAmplitude + \
-            dataSum[(iteratorCount - 1) % len(dataSum)]
+        # currentIndex used modulo method to make a pseudo-circular array
+        currentIndex = self.iteratorCount % len(self.dataHistory)
+        self.dataHistory[currentIndex] = dataAmplitude
 
-        # Find average by taking current sum and dividing by the current iteration count. Count starts from 0 so we +1 because math
-        averageValue = abs(
-            (dataSum[iteratorCount % len(dataSum)] / (iteratorCount + 1)))
+        amplitudeAverage = float('%.3f' % (np.average(self.dataHistory)))
 
-        amplitudeMode = float('%.3f' % (stats.mode(averageValue)[0]))
+        print("== Amplitude Average: ", amplitudeAverage,
+              "\t Current Amplitude: ", dataAmplitude)
 
-        print(amplitudeMode)
-        if (amplitudeMode - previousAmplitudeMode) >= 3:
-            print("== Significant change detected")
-        # self.set_plotdata(name='average', data_x=self.x, data_y=averageValue)
+        if (dataAmplitude - self.previousamplitudeAverage) >= amplitudeThreshold:
+            print("\n== Significant change detected\n")
 
         # Sidenote... I hate how python doesnt have the increment shorthand...
-        iteratorCount += 1
-        previousAmplitudeMode = amplitudeMode
-
-        # TODO
-        # Keep history of x amount of previous entries of amplitude and get the mode from that
-        # if the current amplitude is [threshold] difference from that current mode, send a notice
-
-    # MARK: Update plot values
+        self.iteratorCount += 1
+        self.previousamplitudeAverage = amplitudeAverage
 
     def update(self):
-        global averageValue
 
         wf_data = self.stream.read(self.CHUNK)
         wf_data = struct.unpack(str(2 * self.CHUNK) + 'B', wf_data)
