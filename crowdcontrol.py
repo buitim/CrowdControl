@@ -105,7 +105,7 @@ class AudioStream(object):
     # Python doesn't like it when I don't have self as the first arg. Maybe because I'm declaring this as a method?
     def approximateRollingAverage(self, wf_data):
         # Change this threshold depending on the equipment. Tested using MacBook mic so YMMV
-        amplitudeThreshold = 16
+        amplitudeThreshold = 10
         dataAmplitude = abs(np.median(abs(wf_data)) - 128)
 
         # Each index will be a continuing sum from the last wf_data
